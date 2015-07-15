@@ -15,14 +15,14 @@ if __name__ == '__main__':
     sections = parser.sections()
     pipeline_name = sys.argv[1]
     tasks = parser.get('pipeline ' + pipeline_name, 'tasks').split()
-    task_output = ''
-
+    process_output = ''
+    
     for task in tasks:
         task_key = 'task ' + task
 
         inputs = parser.get(task_key, 'input')
         if inputs == 'STDIN':
-            inputs = task_output.split()
+            inputs = process_output.split()
             inputs = ' '.join(inputs)
 
         command = parser.get(task_key, 'file')
@@ -34,23 +34,15 @@ if __name__ == '__main__':
             for input in inputs:
                 commands.append(command + ' ' + input)
 
-            processes = []
-            for command in commands:
-                process = subprocess.Popen(command, shell=True)
-                processes.append(process)
-
-            for process in processes:
-                output, _ = process.communicate()
-                if type(output) is str:
-                    task_output += output + '\n'
+            process_output = subprocess.check_output('\n'.join(commands), shell=True)
 
         else:
             command += ' ' + inputs
-            task_output = subprocess.check_output(command, shell=True)
+            process_output = subprocess.check_output(command, shell=True)
 
-        print 'Task {} finished'.format(parser.get(task_key, 'file'))
+        print 'Task {} finished'.format(command)
 
-    print task_output 
+    print process_output
     
      
 
