@@ -14,13 +14,24 @@ if __name__ == '__main__':
     parser.read('config.ini')
     sections = parser.sections()
     pipeline_name = sys.argv[1]
-    tasks = parser.get('pipeline ' + pipeline_name, 'tasks').split()
+
+    try:
+        tasks = parser.get('pipeline ' + pipeline_name, 'tasks').split()
+    except configparser.NoSectionError as er:
+        # If the pipeline doesn't exist run the task that matches the name
+        tasks = sys.argv[1].split() 
+
     task_output = ''
 
     for task in tasks:
         task_key = 'task ' + task
 
-        inputs = parser.get(task_key, 'input')
+        try:
+            inputs = parser.get(task_key, 'input')
+        except:
+            print 'Error: Task does not exist'
+            sys.exit(0)
+
         if inputs == 'STDIN':
             inputs = task_output.split()
             inputs = ' '.join(inputs)
