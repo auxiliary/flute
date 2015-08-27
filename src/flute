@@ -28,6 +28,7 @@ if __name__ == '__main__':
     # Parse arguments
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('-l', '--list', default=False, help='List tasks and pipelines', action='store_true')
+    arg_parser.add_argument('pipeline_name', nargs='?', help='Name of pipeline or task to run')
     args = arg_parser.parse_args()
 
     parser = configparser.ConfigParser()
@@ -42,7 +43,7 @@ if __name__ == '__main__':
         list_sections(sections)
         exit(0)
 
-    pipeline_name = sys.argv[1]
+    pipeline_name = args.pipeline_name
 
     # Set configurations as environment variables
     if 'config' in parser.sections():
