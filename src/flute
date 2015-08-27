@@ -2,11 +2,34 @@
 
 import subprocess
 import configparser
+import argparse
 import os.path
 import os
 import sys
 
+def list_sections(sections):
+    # Tasks
+    tasks = [section[section.find(' ') + 1:] for section in sections if section.startswith('task')]
+    pipelines = [section[section.find(' ') + 1:] for section in sections if section.startswith('pipeline')]
+    others = [section for section in sections if not section.startswith('task') and not section.startswith('pipeline')]
+    print 'Tasks: '
+    for task in tasks:
+        print '\t' + task
+
+    print 'Pipelines: '
+    for pipeline in pipelines:
+        print '\t' + pipeline
+
+    print 'Other configurations: '
+    for other in others:
+        print '\t' + other
+
 if __name__ == '__main__':
+    # Parse arguments
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('-l', '--list', default=False, help='List tasks and pipelines', action='store_true')
+    args = arg_parser.parse_args()
+
     parser = configparser.ConfigParser()
     parser._interpolation = configparser.ExtendedInterpolation()
     if not os.path.isfile('config.ini'):
@@ -14,6 +37,11 @@ if __name__ == '__main__':
 
     parser.read('config.ini')
     sections = parser.sections()
+
+    if args.list == True:
+        list_sections(sections)
+        exit(0)
+
     pipeline_name = sys.argv[1]
 
     # Set configurations as environment variables
