@@ -62,6 +62,8 @@ file = quantization.py
 input = ${task task1:input}
 ```
 
+You can list the tasks, pipelines and other configurations with the `--list` argument. 
+
 ## Environment variables as external configurations
 
 In almost every situation, you might need a set of configuration variables that are common between your data processing scripts. Also, you might write your scripts in different languages, like Shell, Python or C, etc. The easiest way to share common configuration variables between these scripts while also minimizing your dependency to a tool like Flute is via **Environment Variables**. 
