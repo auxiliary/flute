@@ -3,6 +3,7 @@
 import subprocess
 import configparser
 import os.path
+import os
 import sys
 
 if __name__ == '__main__':
@@ -14,6 +15,11 @@ if __name__ == '__main__':
     parser.read('config.ini')
     sections = parser.sections()
     pipeline_name = sys.argv[1]
+
+    # Set configurations as environment variables
+    if 'config' in parser.sections():
+        for config in parser.items('config'):
+            os.environ[config[0]] = config[1]
 
     try:
         tasks = parser.get('pipeline ' + pipeline_name, 'tasks').split()
@@ -29,7 +35,7 @@ if __name__ == '__main__':
         try:
             inputs = parser.get(task_key, 'input')
         except:
-            print 'Error: Task does not exist'
+            print 'Error: Task {} does not exist'.format(task)
             sys.exit(0)
 
         if inputs == 'STDIN':
