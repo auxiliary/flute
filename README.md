@@ -1,4 +1,4 @@
-Flute
+![Flute logo](/resources/logo.png?raw=true)
 ===
 
 A simple tool for running serial/parallel task pipelines. 
