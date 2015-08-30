@@ -33,6 +33,7 @@ if __name__ == '__main__':
 
     parser = configparser.ConfigParser()
     parser._interpolation = configparser.ExtendedInterpolation()
+    parser.optionxform = str # To keep it case sensitive
     if not os.path.isfile('config.ini'):
         raise Exception('Error: No configuration found')
 
