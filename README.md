@@ -16,6 +16,7 @@ There are a lot of tools out there for running data processing pipelines. Howeve
 - Would not make you change the code you already have
 - Support any language/executable by supporting files 
 - Providing the ability to run a task in parallel for its inputs
+- Live pipeline manipulation
 
 Note: Flute is currently in a very early stage (a very simple script really). A lot of decent ideas can be added to it. If you thought of a feature, feel free to contribute to the code or add the feature request in the [issues](https://github.com/auxiliary/flute/issues). 
 
@@ -82,8 +83,10 @@ FILL_VALUE=1e+20
 
 If you need to change the pipeline on the fly as it's running, flute provides some options using ZMQ. Using `flute -c` or `flute --console` you can launch a console that connects to the running pipeline run. Currently, only the following commands can be executed on the console:
 
-- *inject <task name>* Injects a task to the running pipeline (the task will be injected as the next task)
-- *reload* Reloads the configuration file in case you have added a new task
-- *q* quits the console
+- **inject <task name>** Injects a task to the running pipeline (the task will be injected as the next task)
+- **reload** Reloads the configuration file in case you have added a new task
+- **skip** Skips the next task on the pipeline
+- **end** End the pipeline after the current running task
+- **q** quits the console
 
 
