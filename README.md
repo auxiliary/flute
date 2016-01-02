@@ -78,3 +78,12 @@ FILL_VALUE=1e+20
 ...
 ```
 
+## Dynamic live manipulation of the pipeline (ZMQ console)
+
+If you need to change the pipeline on the fly as it's running, flute provides some options using ZMQ. Using `flute -c` or `flute --console` you can launch a console that connects to the running pipeline run. Currently, only the following commands can be executed on the console:
+
+- *inject <task name>* Injects a task to the running pipeline (the task will be injected as the next task)
+- *reload* Reloads the configuration file in case you have added a new task
+- *q* quits the console
+
+
