@@ -16,13 +16,14 @@ except ImportError:
     pass
 
 CONFIGURATION_FILENAME = 'config.ini'
+ZMQ_ADDRESS = 'ipc:///tmp/flute'
 
 def listener():
     global parser
     global tasks
     context = zmq.Context.instance()
     socket = context.socket(zmq.REP)
-    socket.bind('ipc:///tmp/flute')
+    socket.bind(ZMQ_ADDRESS)
     while True:
         command = socket.recv()
         socket.send("OK") # Always return OK so we can still listen
@@ -31,6 +32,10 @@ def listener():
         elif command.startswith('inject'):
             _, task = command.split()
             tasks.insert(0, task)
+        elif command == 'skip':
+            tasks.pop(0)
+        elif command == 'end':
+            tasks = []
             
 
 def list_sections(sections):
@@ -80,11 +85,11 @@ if __name__ == '__main__':
     if args.console and ZMQ_ENABLED:
         context = zmq.Context.instance()
         socket = context.socket(zmq.REQ)
-        socket.connect('ipc:///tmp/flute')
+        socket.connect(ZMQ_ADDRESS)
         while True:
             command = raw_input('> ')
             if command == "q":
-                socket.disconnect('ipc:///tmp/flute')
+                socket.disconnect(ZMQ_ADDRESS)
                 exit()
             else:
                 socket.send(command)
