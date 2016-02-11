@@ -87,6 +87,9 @@ If you need to change the pipeline on the fly as it's running, flute provides so
 - **reload** Reloads the configuration file in case you have added a new task
 - **skip** Skips the next task on the pipeline
 - **end** End the pipeline after the current running task
-- **q** quits the console
+- **resume** resumes a broken pipeline
+- **q/quit** quits the console
 
+## Fault tolerance
 
+Currently, if a task fails instead of breaking the pipeline, it will pause it and wait until you resume it with the `resume` command in the console. This gives users the opportunity to fix something, alter the pipeline and resume their work instead of just breaking everything. 

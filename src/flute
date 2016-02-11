@@ -91,7 +91,7 @@ if __name__ == '__main__':
     # Parse arguments
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('-l', '--list', default=False, help='List tasks and pipelines', action='store_true')
-    arg_parser.add_argument('-d', '--dynamic', default=True, help='Enables dynamic manipulation of the pipeline (requires ZMQ)', action='store_true')
+    arg_parser.add_argument('-d', '--disablezmq', default=False, help='Disables dynamic manipulation of the pipeline', action='store_true')
     arg_parser.add_argument('-c', '--console', default=False, help='Provides a console that connects to the pipeline (requires ZMQ)', action='store_true')
     arg_parser.add_argument('pipeline_name', nargs='?', help='Name of pipeline or task to run')
     args = arg_parser.parse_args()
@@ -134,7 +134,7 @@ if __name__ == '__main__':
         tasks = sys.argv[1].split() 
 
     # If dynamic manipulation is enabled, run the listener thread
-    if args.dynamic and ZMQ_ENABLED:
+    if not args.disablezmq and ZMQ_ENABLED:
         listener_thread = threading.Thread(target=listener)
         listener_thread.setDaemon(True)
         listener_thread.start()
