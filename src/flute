@@ -3,19 +3,40 @@
 import subprocess
 import configparser
 import argparse
+import threading
 import os.path
-import time
 import os
 import sys
 
-t = None
-def tic():
-    global t
-    t = time.time()
+ZMQ_ENABLED = True
+try:
+    import zmq
+except ImportError:
+    ZMQ_ENABLED = False
+    pass
 
-def toc():
-    elapsed = time.time() - t 
-    print >>sys.stderr, 'Time elapsed: %s' % elapsed
+CONFIGURATION_FILENAME = 'config.ini'
+ZMQ_ADDRESS = 'ipc:///tmp/flute'
+
+def listener():
+    global parser
+    global tasks
+    context = zmq.Context.instance()
+    socket = context.socket(zmq.REP)
+    socket.bind(ZMQ_ADDRESS)
+    while True:
+        command = socket.recv()
+        socket.send("OK") # Always return OK so we can still listen
+        if command == 'reload':
+            parser = parse_pipeline_configs()
+        elif command.startswith('inject'):
+            _, task = command.split()
+            tasks.insert(0, task)
+        elif command == 'skip':
+            tasks.pop(0)
+        elif command == 'end':
+            tasks = []
+            
 
 def list_sections(sections):
     # Tasks
@@ -34,27 +55,47 @@ def list_sections(sections):
     for other in others:
         print '\t' + other
 
-if __name__ == '__main__':
-    # Parse command line arguments
-    arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument('-l', '--list', default=False, help='List tasks and pipelines', action='store_true')
-    arg_parser.add_argument('pipeline_name', nargs='?', help='Name of pipeline or task to run')
-    args = arg_parser.parse_args()
-
-    # Make a parser to parse the ini config file
+def parse_pipeline_configs():
     parser = configparser.ConfigParser()
     parser._interpolation = configparser.ExtendedInterpolation()
     parser.optionxform = str # To keep it case sensitive
-    if not os.path.isfile('config.ini'):
+    if not os.path.isfile(CONFIGURATION_FILENAME):
         raise Exception('Error: No configuration found')
+    parser.read(CONFIGURATION_FILENAME)
+    return parser
 
-    parser.read('config.ini')
+if __name__ == '__main__':
+    # Parse arguments
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('-l', '--list', default=False, help='List tasks and pipelines', action='store_true')
+    arg_parser.add_argument('-d', '--dynamic', default=True, help='Enables dynamic manipulation of the pipeline (requires ZMQ)', action='store_true')
+    arg_parser.add_argument('-c', '--console', default=False, help='Provides a console that connects to the pipeline (requires ZMQ)', action='store_true')
+    arg_parser.add_argument('pipeline_name', nargs='?', help='Name of pipeline or task to run')
+    args = arg_parser.parse_args()
+
+    parser = parse_pipeline_configs()
     sections = parser.sections()
 
     if args.list == True:
         list_sections(sections)
         exit(0)
 
+    
+    ################### If console mode
+    if args.console and ZMQ_ENABLED:
+        context = zmq.Context.instance()
+        socket = context.socket(zmq.REQ)
+        socket.connect(ZMQ_ADDRESS)
+        while True:
+            command = raw_input('> ')
+            if command == "q":
+                socket.disconnect(ZMQ_ADDRESS)
+                exit()
+            else:
+                socket.send(command)
+                socket.recv()
+    ###################
+    
     pipeline_name = args.pipeline_name
 
     # Set configurations as environment variables
@@ -62,15 +103,23 @@ if __name__ == '__main__':
         for config in parser.items('config'):
             os.environ[config[0]] = config[1]
 
+    # Get list of tasks
     try:
         tasks = parser.get('pipeline ' + pipeline_name, 'tasks').split()
     except configparser.NoSectionError as er:
         # If the pipeline doesn't exist run the task that matches the name
-        tasks = sys.argv[1].split()
+        tasks = sys.argv[1].split() 
+
+    # If dynamic manipulation is enabled, run the listener thread
+    if args.dynamic and ZMQ_ENABLED:
+        listener_thread = threading.Thread(target=listener)
+        listener_thread.setDaemon(True)
+        listener_thread.start()
 
     task_output = ''
 
-    for task in tasks:
+    while len(tasks) > 0:
+        task = tasks.pop(0)
         task_key = 'task ' + task
 
         try:
@@ -85,7 +134,6 @@ if __name__ == '__main__':
 
         command = parser.get(task_key, 'file')
         print 'Running {}...'.format(command)
-        tic()
 
         if parser.has_option(task_key, 'parallel') and parser.get(task_key, 'parallel') == 'true':
             inputs = inputs.split()
@@ -102,7 +150,7 @@ if __name__ == '__main__':
                 output, _ = process.communicate()
                 if type(output) is str:
                     task_output += output + '\n'
-
+        
         elif parser.has_option(task_key, 'serial') and parser.get(task_key, 'serial') == 'true':
             inputs = inputs.split()
             commands = []
@@ -117,6 +165,9 @@ if __name__ == '__main__':
             task_output = subprocess.check_output(command, shell=True)
 
         print 'Task {} finished'.format(parser.get(task_key, 'file'))
-        toc()
 
-    print task_output
+    print task_output 
+    
+     
+
+
