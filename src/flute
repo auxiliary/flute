@@ -5,8 +5,11 @@ import configparser
 import argparse
 import threading
 import os.path
+import time
 import os
 import sys
+
+t = None
 
 ZMQ_ENABLED = True
 try:
@@ -17,6 +20,14 @@ except ImportError:
 
 CONFIGURATION_FILENAME = 'config.ini'
 ZMQ_ADDRESS = 'ipc:///tmp/flute'
+
+def tic():
+    global t
+    t = time.time()
+
+def toc():
+    elapsed = time.time() - t 
+    print >>sys.stderr, 'Time elapsed: %s' % elapsed
 
 def listener():
     global parser
@@ -135,6 +146,8 @@ if __name__ == '__main__':
         command = parser.get(task_key, 'file')
         print 'Running {}...'.format(command)
 
+        tic()
+
         if parser.has_option(task_key, 'parallel') and parser.get(task_key, 'parallel') == 'true':
             inputs = inputs.split()
             commands = []
@@ -164,7 +177,8 @@ if __name__ == '__main__':
             command += ' ' + inputs
             task_output = subprocess.check_output(command, shell=True)
 
-        print 'Task {} finished'.format(parser.get(task_key, 'file'))
+        toc()
+        print 'Task {} finished\n'.format(parser.get(task_key, 'file'))
 
     print task_output 
     
