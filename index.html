@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Flute by auxiliary</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Flute</h1>
+      <h2 class="project-tagline">A simple tool for running parallel task pipelines for data processing</h2>
+      <a href="https://github.com/auxiliary/flute" class="btn">View on GitHub</a>
+      <a href="https://github.com/auxiliary/flute/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/auxiliary/flute/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h2>
+<a id="motivation" class="anchor" href="#motivation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Motivation</h2>
+
+<p>The benefits of a data processing pipeline are:</p>
+
+<ul>
+<li>Being able to easily feed in inputs and running tasks in a data processing environment that otherwise you would have to type in the command line everytime. </li>
+<li>Forcing data analysts to write what they run on the command line in a configuration file so that others (or themselves) will be able to easily follow, remember and redo at a later time. </li>
+<li>Keep track of everything that happened to a data input and be able to easily rerun it all if needed.</li>
+</ul>
+
+<p>There are a lot of tools out there for running data processing pipelines. However I couldn't find a lightweight tool with the following features:</p>
+
+<ul>
+<li>Would not make you change the code you already have</li>
+<li>Support any language/executable by supporting files </li>
+<li>Providing the ability to run a task in parallel for its inputs</li>
+<li>Live pipeline manipulation</li>
+</ul>
+
+<p>Note: Flute is currently in a very early stage (a very simple script really). A lot of decent ideas can be added to it. If you thought of a feature, feel free to contribute to the code or add the feature request in the <a href="https://github.com/auxiliary/flute/issues">issues</a>. </p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+
+<p><code>sudo python setup.py install</code> or if you want to install locally: <code>python setup.py install --user</code></p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>Create a configuration file called <code>config.ini</code> and write the configuration of your pipeline there. 
+Then run <code>flute &lt;pipeline name&gt;</code> to run the pipeline. </p>
+
+<p>The configuration file may contain several tasks, pipelines and comments with in the <code>ini</code> format. Here's an example:</p>
+
+<div class="highlight highlight-source-ini"><pre><span class="pl-en">[task sample_task]</span>
+<span class="pl-k">file</span> = somefile.py
+<span class="pl-k">input</span> = input1.csv input2.csv input3.csv
+<span class="pl-k">parallel</span> = true
+
+<span class="pl-en">[task sample_task2]</span>
+<span class="pl-k">file</span> = anotherfile.sh
+<span class="pl-k">input</span> = stdin
+
+<span class="pl-en">[pipeline pipe1]</span>
+<span class="pl-k">tasks</span> = sample_task sample_task2</pre></div>
+
+<p>This pipeline (<code>pipe1</code>) runs the first task (<code>sample_task</code>) first and then runs sample_task2. For the first task, 3 copies of the file <code>somefile.py</code> are executed with the inputs of input1.csv, input2.csv and input3.csv respectively. The output of this task is then fed into sample_task2 that's run serially. The keyword <code>stdin</code> tells Flute to take the input from the pipe (meaning from the first task in this case). </p>
+
+<p>For running this sample pipeline, you would run:</p>
+
+<p><code>flute pipe1</code></p>
+
+<p>Variables can be used in the configuration files as they're normal ini files. So for example, we can have:</p>
+
+<div class="highlight highlight-source-ini"><pre><span class="pl-en">[task task1]</span>
+<span class="pl-k">file</span> = variable_extraction.py
+<span class="pl-k">input</span> = input_file.nc input_file2.nc
+
+<span class="pl-en">[task task2]</span>
+<span class="pl-k">file</span> = quantization.py
+<span class="pl-k">input</span> = ${task task1:input}</pre></div>
+
+<p>You can list the tasks, pipelines and other configurations with the <code>--list</code> argument. </p>
+
+<h2>
+<a id="environment-variables-as-external-configurations" class="anchor" href="#environment-variables-as-external-configurations" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Environment variables as external configurations</h2>
+
+<p>In almost every situation, you might need a set of configuration variables that are common between your data processing scripts. Also, you might write your scripts in different languages, like Shell, Python or C, etc. The easiest way to share common configuration variables between these scripts while also minimizing your dependency to a tool like Flute is via <strong>Environment Variables</strong>. </p>
+
+<p>This is why Flute automatically takes all variables under the <strong>config</strong> section of your configuration file and sets them as environment variables for your scripts to use. For example, in the following configuration, <code>WORKSPACE</code> and <code>FILL_VALUE</code> will be set as environment variables.</p>
+
+<div class="highlight highlight-source-ini"><pre><span class="pl-en">[config]</span>
+<span class="pl-k">WORKSPACE</span>=~/project/example_path
+<span class="pl-k">FILL_VALUE</span>=1e+20
+
+...</pre></div>
+
+<h2>
+<a id="dynamic-live-manipulation-of-the-pipeline-zmq-console" class="anchor" href="#dynamic-live-manipulation-of-the-pipeline-zmq-console" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Dynamic live manipulation of the pipeline (ZMQ console)</h2>
+
+<p>If you need to change the pipeline on the fly as it's running, flute provides some options using ZMQ. Using <code>flute -c</code> or <code>flute --console</code> you can launch a console that connects to the running pipeline run. Currently, only the following commands can be executed on the console:</p>
+
+<ul>
+<li>
+<strong>inject </strong> Injects a task to the running pipeline (the task will be injected as the next task)</li>
+<li>
+<strong>reload</strong> Reloads the configuration file in case you have added a new task</li>
+<li>
+<strong>skip</strong> Skips the next task on the pipeline</li>
+<li>
+<strong>end</strong> End the pipeline after the current running task</li>
+<li>
+<strong>resume</strong> resumes a broken pipeline</li>
+<li>
+<strong>q/quit</strong> quits the console</li>
+</ul>
+
+<h2>
+<a id="fault-tolerance" class="anchor" href="#fault-tolerance" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Fault tolerance</h2>
+
+<p>Currently, if a task fails instead of breaking the pipeline, it will pause it and wait until you resume it with the <code>resume</code> command in the console. This gives users the opportunity to fix something, alter the pipeline and resume their work instead of just breaking everything. </p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/auxiliary/flute">Flute</a> is maintained by <a href="https://github.com/auxiliary">auxiliary</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
