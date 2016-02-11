@@ -61,7 +61,7 @@ def listener():
             resume = True
             
 
-def list_sections(sections):
+def list_sections(parser, sections):
     # Tasks
     tasks = [section[section.find(' ') + 1:] for section in sections if section.startswith('task')]
     pipelines = [section[section.find(' ') + 1:] for section in sections if section.startswith('pipeline')]
@@ -72,7 +72,7 @@ def list_sections(sections):
 
     print 'Pipelines: '
     for pipeline in pipelines:
-        print '\t' + pipeline
+        print '\t' + pipeline + ': ' + parser.get('pipeline ' + pipeline, 'tasks')
 
     print 'Other configurations: '
     for other in others:
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     sections = parser.sections()
 
     if args.list == True:
-        list_sections(sections)
+        list_sections(parser, sections)
         exit(0)
 
     
