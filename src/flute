@@ -10,6 +10,7 @@ import os
 import sys
 
 t = None
+resume = None
 
 ZMQ_ENABLED = True
 try:
@@ -29,9 +30,18 @@ def toc():
     elapsed = time.time() - t 
     print >>sys.stderr, 'Time elapsed: %s' % elapsed
 
+def wait_for_user():
+    global resume
+    print "Some error occurred. Waiting for user action from Flute console..."
+    resume = False
+    while not resume:
+        pass
+    print "Resuming"
+
 def listener():
     global parser
     global tasks
+    global resume
     context = zmq.Context.instance()
     socket = context.socket(zmq.REP)
     socket.bind(ZMQ_ADDRESS)
@@ -47,6 +57,8 @@ def listener():
             tasks.pop(0)
         elif command == 'end':
             tasks = []
+        elif command == 'resume':
+            resume = True
             
 
 def list_sections(sections):
@@ -99,7 +111,7 @@ if __name__ == '__main__':
         socket.connect(ZMQ_ADDRESS)
         while True:
             command = raw_input('> ')
-            if command == "q":
+            if command == "q" or command == "quit":
                 socket.disconnect(ZMQ_ADDRESS)
                 exit()
             else:
@@ -160,7 +172,9 @@ if __name__ == '__main__':
                 processes.append(process)
 
             for process in processes:
-                output, _ = process.communicate()
+                output, err = process.communicate()
+                if (err):
+                    wait_for_user();
                 if type(output) is str:
                     task_output += output + '\n'
         
@@ -171,17 +185,21 @@ if __name__ == '__main__':
                 commands.append(command + ' ' + input)
 
             for command in commands:
-                task_output += subprocess.check_output(command, shell=True) + '\n'
+                try:
+                    task_output += subprocess.check_output(command, shell=True) + '\n'
+                except subprocess.CalledProcessError as e:
+                    wait_for_user()
 
         else:
             command += ' ' + inputs
-            task_output = subprocess.check_output(command, shell=True)
+            try:
+                task_output = subprocess.check_output(command, shell=True)
+            except subprocess.CalledProcessError as e:
+                wait_for_user()
 
         toc()
         print 'Task {} finished\n'.format(parser.get(task_key, 'file'))
 
     print task_output 
     
-     
-
 
