@@ -5,12 +5,15 @@ import configparser
 import argparse
 import threading
 import os.path
-import time
+import datetime
+from dateutil import relativedelta
 import os
 import sys
 
-t = None
+times = []
 resume = None
+attrs = ['years', 'months', 'days', 'hours', 'minutes', 'seconds', 'microseconds']
+human_readable = lambda delta: ['%d %s' % (getattr(delta, attr), getattr(delta, attr) > 1 and attr or attr[:-1]) for attr in attrs if getattr(delta, attr)]
 
 ZMQ_ENABLED = True
 try:
@@ -23,12 +26,12 @@ CONFIGURATION_FILENAME = 'config.ini'
 ZMQ_ADDRESS = 'ipc:///tmp/flute'
 
 def tic():
-    global t
-    t = time.time()
+    global times
+    times.append(datetime.datetime.now())
 
 def toc():
-    elapsed = time.time() - t 
-    print >>sys.stderr, 'Time elapsed: %s' % elapsed
+    elapsed = relativedelta.relativedelta(datetime.datetime.now(), times.pop())
+    print >>sys.stderr, 'Time elapsed: ', ' and '.join(human_readable(elapsed))
 
 def wait_for_user():
     global resume
@@ -141,6 +144,7 @@ if __name__ == '__main__':
 
     task_output = ''
 
+    tic()
     while len(tasks) > 0:
         task = tasks.pop(0)
         task_key = 'task ' + task
@@ -201,5 +205,6 @@ if __name__ == '__main__':
         print 'Task {} finished\n'.format(parser.get(task_key, 'file'))
 
     print task_output 
+    toc()
     
 
