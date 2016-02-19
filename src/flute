@@ -29,9 +29,12 @@ def tic():
     global times
     times.append(datetime.datetime.now())
 
-def toc():
+def toc(task_name=None):
     elapsed = relativedelta.relativedelta(datetime.datetime.now(), times.pop())
-    print >>sys.stderr, 'Time elapsed: ', ' and '.join(human_readable(elapsed))
+    if task_name is None:
+        print >>sys.stderr, 'Time elapsed:', ' and '.join(human_readable(elapsed))
+    else:
+        print >>sys.stderr, 'Time elapsed for ' + task_name + ':', ' and '.join(human_readable(elapsed))
 
 def wait_for_user():
     global resume
@@ -201,10 +204,10 @@ if __name__ == '__main__':
             except subprocess.CalledProcessError as e:
                 wait_for_user()
 
-        toc()
+        toc(task_key)
         print 'Task {} finished\n'.format(parser.get(task_key, 'file'))
 
     print task_output 
-    toc()
+    toc("pipeline " + pipeline_name)
     
 
