@@ -100,6 +100,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('-d', '--disablezmq', default=False, help='Disables dynamic manipulation of the pipeline', action='store_true')
     arg_parser.add_argument('-c', '--console', default=False, help='Provides a console that connects to the pipeline (requires ZMQ)', action='store_true')
     arg_parser.add_argument('pipeline_name', nargs='?', help='Name of pipeline or task to run')
+    arg_parser.add_argument('inputs', nargs='*', help='Possible inputs for the first task that takes from STDIN')
     args = arg_parser.parse_args()
 
     parser = parse_pipeline_configs()
@@ -159,8 +160,13 @@ if __name__ == '__main__':
             sys.exit(0)
 
         if inputs == 'STDIN':
-            inputs = task_output.split()
-            inputs = ' '.join(inputs)
+            if task_output != '':
+                inputs = task_output.split()
+                inputs = ' '.join(inputs)
+            else:
+                inputs = ' '.join(args.inputs)
+            
+            print inputs
 
         command = parser.get(task_key, 'file')
         print 'Running {}...'.format(command)
